@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Retail Sales Dashboard — Ali Abdi</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1" crossorigin="anonymous"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#F4F3F0;--card:#FFFFFF;--header:#1A1917;
+  --text:#1A1917;--muted:#6B6860;--faint:#A8A59F;
+  --border:#E8E6E0;--radius:12px;--gap:16px;
+  --blue:#185FA5;--green:#1D9E75;--amber:#BA7517;--red:#A32D2D;--purple:#534AB7;
+  --blue-l:#E6F1FB;--green-l:#E1F5EE;--amber-l:#FAEEDA;--red-l:#FCEBEB;--purple-l:#EEEDFE;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);font-size:14px;min-height:100vh}
+.wrap{max-width:1200px;margin:0 auto;padding:20px}
+
+/* HEADER */
+.hdr{background:var(--header);border-radius:var(--radius);padding:18px 24px;margin-bottom:var(--gap);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
+.hdr-left h1{color:#fff;font-size:18px;font-weight:600;letter-spacing:-0.02em}
+.hdr-left p{color:rgba(255,255,255,0.5);font-size:12px;margin-top:2px}
+.hdr-right{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.filter-grp{display:flex;align-items:center;gap:6px}
+.filter-grp label{font-size:11px;color:rgba(255,255,255,0.6);white-space:nowrap}
+.filter-grp select{padding:5px 10px;border:1px solid rgba(255,255,255,0.2);border-radius:6px;background:rgba(255,255,255,0.1);color:#fff;font-size:12px;cursor:pointer}
+.filter-grp select option{background:#1A1917;color:#fff}
+.reset-btn{padding:5px 12px;border:1px solid rgba(255,255,255,0.2);border-radius:6px;background:transparent;color:rgba(255,255,255,0.7);font-size:12px;cursor:pointer;transition:all .15s}
+.reset-btn:hover{background:rgba(255,255,255,0.1);color:#fff}
+
+/* KPI ROW */
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:var(--gap);margin-bottom:var(--gap)}
+.kpi{background:var(--card);border-radius:var(--radius);padding:18px 20px;border:0.5px solid var(--border)}
+.kpi-label{font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.kpi-value{font-size:26px;font-weight:700;letter-spacing:-0.02em;color:var(--text);line-height:1}
+.kpi-sub{font-size:12px;color:var(--muted);margin-top:6px;display:flex;align-items:center;gap:4px}
+.pill{display:inline-block;padding:2px 7px;border-radius:10px;font-size:11px;font-weight:600}
+.pill-green{background:var(--green-l);color:#085041}
+.pill-blue{background:var(--blue-l);color:#0C447C}
+.pill-amber{background:var(--amber-l);color:#633806}
+.pill-purple{background:var(--purple-l);color:#3C3489}
+
+/* CHART GRID */
+.chart-row{display:grid;grid-template-columns:2fr 1fr;gap:var(--gap);margin-bottom:var(--gap)}
+.chart-row-2{display:grid;grid-template-columns:1fr 1fr 1fr;gap:var(--gap);margin-bottom:var(--gap)}
+.card{background:var(--card);border-radius:var(--radius);padding:20px 24px;border:0.5px solid var(--border)}
+.card-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:16px;letter-spacing:-0.01em}
+.card canvas{max-height:240px}
+
+/* TABLE */
+.table-card{background:var(--card);border-radius:var(--radius);padding:20px 24px;border:0.5px solid var(--border);margin-bottom:var(--gap)}
+.table-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.table-search{padding:6px 12px;border:0.5px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-size:12px;width:200px}
+.table-search:focus{outline:none;border-color:var(--blue)}
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead th{text-align:left;padding:8px 10px;border-bottom:1.5px solid var(--border);color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;white-space:nowrap;cursor:pointer;user-select:none}
+thead th:hover{color:var(--text)}
+tbody td{padding:9px 10px;border-bottom:0.5px solid var(--border);color:var(--text)}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover{background:var(--bg)}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:500}
+.badge-elec{background:var(--blue-l);color:#0C447C}
+.badge-cloth{background:var(--purple-l);color:#3C3489}
+.badge-food{background:var(--green-l);color:#085041}
+.badge-home{background:var(--amber-l);color:#633806}
+
+/* FOOTER */
+.footer{text-align:center;font-size:11px;color:var(--faint);padding:8px 0 4px;display:flex;justify-content:space-between}
+.footer a{color:var(--faint);text-decoration:none}
+.footer a:hover{color:var(--text)}
+
+@media(max-width:768px){
+  .chart-row,.chart-row-2{grid-template-columns:1fr}
+  .hdr{flex-direction:column;align-items:flex-start}
+  .kpi-value{font-size:22px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hdr">
+  <div class="hdr-left">
+    <h1>Retail Sales Dashboard</h1>
+    <p>Portfolio project by Ali Abdi · aliabdi2025 · 2023 data</p>
+  </div>
+  <div class="hdr-right">
+    <div class="filter-grp"><label>Region</label>
+      <select id="f-region" onchange="applyFilters()">
+        <option value="all">All regions</option>
+        <option>East</option><option>North</option><option>South</option><option>West</option>
+      </select>
+    </div>
+    <div class="filter-grp"><label>Category</label>
+      <select id="f-cat" onchange="applyFilters()">
+        <option value="all">All categories</option>
+        <option>Clothing</option><option>Electronics</option><option>Food &amp; Drink</option><option>Home &amp; Garden</option>
+      </select>
+    </div>
+    <div class="filter-grp"><label>Quarter</label>
+      <select id="f-qtr" onchange="applyFilters()">
+        <option value="all">All quarters</option>
+        <option>Q1</option><option>Q2</option><option>Q3</option><option>Q4</option>
+      </select>
+    </div>
+    <button class="reset-btn" onclick="resetFilters()">Reset</button>
+  </div>
+</header>
+
+<section class="kpi-row">
+  <div class="kpi">
+    <div class="kpi-label">Total Revenue</div>
+    <div class="kpi-value" id="kpi-rev">£0</div>
+    <div class="kpi-sub"><span class="pill pill-green">2023</span> all transactions</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-label">Total Orders</div>
+    <div class="kpi-value" id="kpi-orders">0</div>
+    <div class="kpi-sub"><span class="pill pill-blue" id="kpi-orders-badge">—</span></div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-label">Avg Order Value</div>
+    <div class="kpi-value" id="kpi-avg">£0</div>
+    <div class="kpi-sub"><span class="pill pill-purple">per transaction</span></div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-label">Top Region</div>
+    <div class="kpi-value" id="kpi-region" style="font-size:20px;padding-top:4px">—</div>
+    <div class="kpi-sub"><span class="pill pill-amber" id="kpi-region-rev">—</span></div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-label">Top Category</div>
+    <div class="kpi-value" id="kpi-cat" style="font-size:18px;padding-top:4px">—</div>
+    <div class="kpi-sub"><span class="pill pill-green" id="kpi-cat-rev">—</span></div>
+  </div>
+</section>
+
+<div class="chart-row">
+  <div class="card"><p class="card-title">Monthly revenue — 2023</p><canvas id="c-monthly"></canvas></div>
+  <div class="card"><p class="card-title">Revenue by category</p><canvas id="c-cat"></canvas></div>
+</div>
+
+<div class="chart-row-2">
+  <div class="card"><p class="card-title">Revenue by region</p><canvas id="c-region"></canvas></div>
+  <div class="card"><p class="card-title">Sales rep performance</p><canvas id="c-rep"></canvas></div>
+  <div class="card"><p class="card-title">Top 10 products</p><canvas id="c-product"></canvas></div>
+</div>
+
+<div class="table-card">
+  <div class="table-header">
+    <p class="card-title" style="margin:0">Transaction detail <span id="row-count" style="font-weight:400;color:var(--muted)"></span></p>
+    <input class="table-search" id="tbl-search" placeholder="Search orders…" oninput="renderTable()">
+  </div>
+  <div class="tbl-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th onclick="sortTable('order_id')">Order ↕</th>
+          <th onclick="sortTable('date')">Date ↕</th>
+          <th onclick="sortTable('region')">Region ↕</th>
+          <th onclick="sortTable('category')">Category ↕</th>
+          <th onclick="sortTable('product')">Product ↕</th>
+          <th onclick="sortTable('quantity')">Qty ↕</th>
+          <th onclick="sortTable('unit_price')">Price ↕</th>
+          <th onclick="sortTable('revenue')">Revenue ↕</th>
+          <th onclick="sortTable('sales_rep')">Rep ↕</th>
+        </tr>
+      </thead>
+      <tbody id="tbl-body"></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="footer">
+  <span>Portfolio dashboard · Data Analyst · London, UK</span>
+  <span><a href="https://github.com/aliabdi2025" target="_blank">github.com/aliabdi2025</a> · <a href="https://linkedin.com/in/ali-abdi-3115bb1ba" target="_blank">LinkedIn</a></span>
+</div>
+
+</div>
+
+<script>
+const RAW=[{"order_id":"ORD-1246","date":"2023-05-21","region":"North","category":"Electronics","product":"Tablet","quantity":20,"unit_price":798.53,"revenue":15970.6,"sales_rep":"Alice Johnson"},{"order_id":"ORD-1111","date":"2023-06-06","region":"North","category":"Home & Garden","product":"Candle Set","quantity":19,"unit_price":792.07,"revenue":15049.33,"sales_rep":"Emma Walsh"},{"order_id":"ORD-1023","date":"2023-02-13","region":"West","category":"Electronics","product":"Headphones","quantity":19,"unit_price":757.82,"revenue":14398.58,"sales_rep":"Alice Johnson"},{"order_id":"ORD-1078","date":"2023-01-11","region":"West","category":"Home & Garden","product":"Throw Blanket","quantity":19,"unit_price":757.12,"revenue":14385.28,"sales_rep":"David Okafor"},{"order_id":"ORD-1184","date":"2023-11-15","region":"North","category":"Clothing","product":"Sneakers","quantity":18,"unit_price":779.76,"revenue":14035.68,"sales_rep":"Emma Walsh"},{"order_id":"ORD-1144","date":"2023-11-14","region":"South","category":"Clothing","product":"Jacket","quantity":20,"unit_price":697.32,"revenue":13946.4,"sales_rep":"David Okafor"},{"order_id":"ORD-1021","date":"2023-09-29","region":"North","category":"Food & Drink","product":"Protein Bar","quantity":18,"unit_price":763.03,"revenue":13734.54,"sales_rep":"Emma Walsh"},{"order_id":"ORD-1072","date":"2023-11-01","region":"East","category":"Clothing","product":"Sneakers","quantity":17,"unit_price":790.37,"revenue":13436.29,"sales_rep":"David Okafor"},{"order_id":"ORD-1093","date":"2023-05-19","region":"West","category":"Home & Garden","product":"Plant Pot","quantity":17,"unit_price":772.55,"revenue":13133.35,"sales_rep":"David Okafor"},{"order_id":"ORD-1136","date":"2023-06-19","region":"North","category":"Electronics","product":"Headphones","quantity":17,"unit_price":772.46,"revenue":13131.82,"sales_rep":"David Okafor"},{"order_id":"ORD-1110","date":"2023-04-26","region":"West","category":"Home & Garden","product":"Picture Frame","quantity":20,"unit_price":633.64,"revenue":12672.8,"sales_rep":"David Okafor"},{"order_id":"ORD-1341","date":"2023-11-25","region":"West","category":"Food & Drink","product":"Green Tea","quantity":16,"unit_price":773.37,"revenue":12373.92,"sales_rep":"David Okafor"},{"order_id":"ORD-1262","date":"2023-02-10","region":"East","category":"Clothing","product":"T-Shirt","quantity":17,"unit_price":716.47,"revenue":12179.99,"sales_rep":"Bob Smith"},{"order_id":"ORD-1024","date":"2023-03-26","region":"East","category":"Clothing","product":"Jeans","quantity":16,"unit_price":757.74,"revenue":12123.84,"sales_rep":"Emma Walsh"},{"order_id":"ORD-1064","date":"2023-06-05","region":"East","category":"Food & Drink","product":"Smoothie Mix","quantity":18,"unit_price":667.81,"revenue":12020.58,"sales_rep":"Bob Smith"},{"order_id":"ORD-1195","date":"2023-07-01","region":"North","category":"Clothing","product":"Hoodie","quantity":18,"unit_price":667.52,"revenue":12015.36,"sales_rep":"David Okafor"},{"order_id":"ORD-1373","date":"2023-06-16","region":"West","category":"Food & Drink","product":"Smoothie Mix","quantity":19,"unit_price":626.67,"revenue":11906.73,"sales_rep":"Clara Lee"},{"order_id":"ORD-1377","date":"2023-09-03","region":"West","category":"Home & Garden","product":"Desk Lamp","quantity":15,"unit_price":792.61,"revenue":11889.15,"sales_rep":"Emma Walsh"},{"order_id":"ORD-1221","date":"2023-04-10","region":"East","category":"Clothing","product":"T-Shirt","quantity":16,"unit_price":723.66,"revenue":11578.56,"sales_rep":"Emma Walsh"},{"order_id":"ORD-1264","date":"2023-11-06","region":"East","category":"Clothing","product":"Jeans","quantity":20,"unit_price":577.9,"revenue":11558.0,"sales_rep":"Emma Walsh"},{"order_id":"ORD-1214","date":"2023-02-13","region":"East","category":"Home & Garden","product":"Plant Pot","quantity":20,"unit_price":568.52,"revenue":11370.4,"sales_rep":"Emma Walsh"},{"order_id":"ORD-1097","date":"2023-05-22","region":"North","category":"Food & Drink","product":"Green Tea","quantity":20,"unit_price":562.44,"revenue":11248.8,"sales_rep":"Emma Walsh"},{"order_id":"ORD-1159","date":"2023-06-04","region":"West","category":"Clothing","product":"Jacket","quantity":15,"unit_price":727.96,"revenue":10919.4,"sales_rep":"Alice Johnson"},{"order_id":"ORD-1247","date":"2023-12-14","region":"South","category":"Home & Garden","product":"Candle Set","quantity":17,"unit_price":641.87,"revenue":10911.79,"sales_rep":"Alice Johnson"},{"order_id":"ORD-1053","date":"2023-03-21","region":"South","category":"Food & Drink","product":"Dark Chocolate","quantity":14,"unit_price":779.2,"revenue":10908.8,"sales_rep":"Bob Smith"},{"order_id":"ORD-1025","date":"2023-12-20","region":"South","category":"Home & Garden","product":"Plant Pot","quantity":18,"unit_price":605.44,"revenue":10897.92,"sales_rep":"Clara Lee"},{"order_id":"ORD-1173","date":"2023-08-07","region":"North","category":"Electronics","product":"Laptop","quantity":16,"unit_price":678.6,"revenue":10857.6,"sales_rep":"David Okafor"},{"order_id":"ORD-1331","date":"2023-10-13","region":"South","category":"Electronics","product":"Keyboard","quantity":14,"unit_price":774.39,"revenue":10841.46,"sales_rep":"David Okafor"},{"order_id":"ORD-1026","date":"2023-08-20","region":"North","category":"Home & Garden","product":"Candle Set","quantity":15,"unit_price":720.19,"revenue":10802.85,"sales_rep":"Bob Smith"},{"order_id":"ORD-1073","date":"2023-09-01","region":"West","category":"Home & Garden","product":"Picture Frame","quantity":15,"unit_price":718.28,"revenue":10774.2,"sales_rep":"Clara Lee"},{"order_id":"ORD-1092","date":"2023-11-22","region":"West","category":"Home & Garden","product":"Desk Lamp","quantity":14,"unit_price":768.83,"revenue":10763.62,"sales_rep":"Bob Smith"},{"order_id":"ORD-1177","date":"2023-07-31","region":"East","category":"Clothing","product":"Sneakers","quantity":15,"unit_price":711.03,"revenue":10665.45,"sales_rep":"David Okafor"},{"order_id":"ORD-1065","date":"2023-08-27","region":"West","category":"Home & Garden","product":"Picture Frame","quantity":20,"unit_price":525.49,"revenue":10509.8,"sales_rep":"David Okafor"},{"order_id":"ORD-1282","date":"2023-06-03","region":"East","category":"Food & Drink","product":"Protein Bar","quantity":13,"unit_price":792.54,"revenue":10303.02,"sales_rep":"Emma Walsh"},{"order_id":"ORD-1235","date":"2023-05-10","region":"North","category":"Home & Garden","product":"Desk Lamp","quantity":13,"unit_price":784.93,"revenue":10204.09,"sales_rep":"Clara Lee"},{"order_id":"ORD-1066","date":"2023-03-28","region":"North","category":"Clothing","product":"Hoodie","quantity":16,"unit_price":636.02,"revenue":10176.32,"sales_rep":"Clara Lee"},{"order_id":"ORD-1357","date":"2023-06-27","region":"North","category":"Clothing","product":"Jacket","quantity":17,"unit_price":597.64,"revenue":10159.88,"sales_rep":"Alice Johnson"},{"order_id":"ORD-1015","date":"2023-07-24","region":"East","category":"Food & Drink","product":"Dark Chocolate","quantity":14,"unit_price":718.77,"revenue":10062.78,"sales_rep":"Bob Smith"},{"order_id":"ORD-1208","date":"2023-06-14","region":"West","category":"Electronics","product":"Smartwatch","quantity":19,"unit_price":523.21,"revenue":9940.99,"sales_rep":"Emma Walsh"},{"order_id":"ORD-1139","date":"2023-11-17","region":"West","category":"Food & Drink","product":"Dark Chocolate","quantity":13,"unit_price":763.54,"revenue":9926.02,"sales_rep":"Emma Walsh"},{"order_id":"ORD-1369","date":"2023-08-23","region":"North","category":"Clothing","product":"Sneakers","quantity":20,"unit_price":495.25,"revenue":9905.0,"sales_rep":"Bob Smith"},{"order_id":"ORD-1300","date":"2023-04-01","region":"North","category":"Electronics","product":"Headphones","quantity":14,"unit_price":706.38,"revenue":9889.32,"sales_rep":"David Okafor"},{"order_id":"ORD-1181","date":"2023-01-27","region":"East","category":"Home & Garden","product":"Candle Set","quantity":14,"unit_price":695.13,"revenue":9731.82,"sales_rep":"Emma Walsh"},{"order_id":"ORD-1034","date":"2023-10-09","region":"North","category":"Clothing","product":"Jacket","quantity":15,"unit_price":647.38,"revenue":9710.7,"sales_rep":"Alice Johnson"},{"order_id":"ORD-1194","date":"2023-03-31","region":"South","category":"Electronics","product":"Laptop","quantity":16,"unit_price":598.88,"revenue":9582.08,"sales_rep":"David Okafor"},{"order_id":"ORD-1037","date":"2023-09-07","region":"South","category":"Food & Drink","product":"Smoothie Mix","quantity":18,"unit_price":531.19,"revenue":9561.42,"sales_rep":"Bob Smith"},{"order_id":"ORD-1381","date":"2023-10-29","region":"South","category":"Food & Drink","product":"Smoothie Mix","quantity":15,"unit_price":619.01,"revenue":9285.15,"sales_rep":"Clara Lee"},{"order_id":"ORD-1260","date":"2023-04-04","region":"South","category":"Food & Drink","product":"Protein Bar","quantity":18,"unit_price":513.64,"revenue":9245.52,"sales_rep":"David Okafor"},{"order_id":"ORD-1278","date":"2023-05-24","region":"North","category":"Home & Garden","product":"Picture Frame","quantity":15,"unit_price":612.7,"revenue":9190.5,"sales_rep":"Bob Smith"},{"order_id":"ORD-1293","date":"2023-03-16","region":"East","category":"Home & Garden","product":"Throw Blanket","quantity":12,"unit_price":763.91,"revenue":9166.92,"sales_rep":"Alice Johnson"},{"order_id":"ORD-1371","date":"2023-11-30","region":"South","category":"Home & Garden","product":"Candle Set","quantity":14,"unit_price":653.3,"revenue":9146.2,"sales_rep":"Clara Lee"},{"order_id":"ORD-1271","date":"2023-08-03","region":"South","category":"Electronics","product":"Tablet","quantity":13,"unit_price":692.01,"revenue":8996.13,"sales_rep":"Bob Smith"}];
+
+const MONTHLY=[{m:"Jan",r:141694.11},{m:"Feb",r:141984.95},{m:"Mar",r:104980.85},{m:"Apr",r:108429.63},{m:"May",r:135584.41},{m:"Jun",r:198449.17},{m:"Jul",r:113106.3},{m:"Aug",r:176626.58},{m:"Sep",r:108083.14},{m:"Oct",r:121502.99},{m:"Nov",r:192382.9},{m:"Dec",r:127501.4}];
+const CATS=[{c:"Home & Garden",r:464072.28},{c:"Clothing",r:421432.72},{c:"Electronics",r:412825.05},{c:"Food & Drink",r:371996.38}];
+const REGIONS=[{r:"East",v:451879.26},{r:"North",v:444603.09},{r:"West",v:401312.47},{r:"South",v:372531.61}];
+const REPS=[{r:"David Okafor",v:407478.07},{r:"Emma Walsh",v:386390.72},{r:"Bob Smith",v:338483.17},{r:"Clara Lee",v:274153.58},{r:"Alice Johnson",v:263820.89}];
+const PRODS=[{p:"Picture Frame",r:116800.4},{p:"Sneakers",r:103018.14},{p:"Headphones",r:99000.05},{p:"Laptop",r:97045.35},{p:"Throw Blanket",r:96442.38},{p:"Jacket",r:92658.36},{p:"Candle Set",r:91862.09},{p:"Tablet",r:87186.6},{p:"Protein Bar",r:86785.54},{p:"Smoothie Mix",r:86613.78}];
+
+const C={blue:"#185FA5",green:"#1D9E75",amber:"#BA7517",purple:"#534AB7",red:"#A32D2D",blueL:"rgba(24,95,165,0.15)",greenL:"rgba(29,158,117,0.15)"};
+const PALETTE=["#185FA5","#1D9E75","#BA7517","#534AB7","#A32D2D","#0F6E56","#3B6D11","#633806"];
+
+let charts={}, sortKey="revenue", sortAsc=false;
+
+function fmt(n){if(n>=1e6)return"£"+(n/1e6).toFixed(1)+"M";if(n>=1e3)return"£"+(n/1e3).toFixed(1)+"K";return"£"+Math.round(n).toLocaleString();}
+function fmtFull(n){return"£"+n.toLocaleString("en-GB",{minimumFractionDigits:2,maximumFractionDigits:2});}
+
+function getFiltered(){
+  const reg=document.getElementById("f-region").value;
+  const cat=document.getElementById("f-cat").value;
+  const qtr=document.getElementById("f-qtr").value;
+  return RAW.filter(r=>{
+    const d=new Date(r.date);const q="Q"+Math.ceil((d.getMonth()+1)/3);
+    return(reg==="all"||r.region===reg)&&(cat==="all"||r.category===cat)&&(qtr==="all"||q===qtr);
+  });
+}
+
+function updateKPIs(data){
+  const rev=data.reduce((s,r)=>s+r.revenue,0);
+  const orders=data.length;
+  const avg=orders?rev/orders:0;
+  const byReg={};data.forEach(r=>byReg[r.region]=(byReg[r.region]||0)+r.revenue);
+  const topReg=Object.entries(byReg).sort((a,b)=>b[1]-a[1])[0]||["—",0];
+  const byCat={};data.forEach(r=>byCat[r.category]=(byCat[r.category]||0)+r.revenue);
+  const topCat=Object.entries(byCat).sort((a,b)=>b[1]-a[1])[0]||["—",0];
+  document.getElementById("kpi-rev").textContent=fmt(rev);
+  document.getElementById("kpi-orders").textContent=orders.toLocaleString();
+  document.getElementById("kpi-orders-badge").textContent=orders+" orders";
+  document.getElementById("kpi-avg").textContent=fmt(avg);
+  document.getElementById("kpi-region").textContent=topReg[0];
+  document.getElementById("kpi-region-rev").textContent=fmt(topReg[1]);
+  document.getElementById("kpi-cat").textContent=topCat[0]||"—";
+  document.getElementById("kpi-cat-rev").textContent=fmt(topCat[1]||0);
+}
+
+function mkChart(id,config){
+  if(charts[id])charts[id].destroy();
+  const ctx=document.getElementById(id).getContext("2d");
+  charts[id]=new Chart(ctx,config);
+}
+
+function buildCharts(data){
+  // monthly — use full dataset always (not filtered by row)
+  const monthlyData=data.length===RAW.length?MONTHLY:
+    (()=>{const m={};data.forEach(r=>{const mo=new Date(r.date).toLocaleString("en",{month:"short"});m[mo]=(m[mo]||0)+r.revenue;});return["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"].map(mo=>({m:mo,r:m[mo]||0}));})();
+  mkChart("c-monthly",{type:"bar",data:{labels:monthlyData.map(d=>d.m),datasets:[{label:"Revenue",data:monthlyData.map(d=>Math.round(d.r)),backgroundColor:C.blueL,borderColor:C.blue,borderWidth:2,borderRadius:4,hoverBackgroundColor:C.blue+"40"}]},options:{responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>"  "+fmt(c.raw)}}},scales:{y:{ticks:{callback:v=>fmt(v)},grid:{color:"#E8E6E0"}},x:{grid:{display:false}}}}});
+
+  // category donut
+  const catD=data.length===RAW.length?CATS:(()=>{const m={};data.forEach(r=>m[r.category]=(m[r.category]||0)+r.revenue);return Object.entries(m).sort((a,b)=>b[1]-a[1]).map(([c,r])=>({c,r}));})();
+  mkChart("c-cat",{type:"doughnut",data:{labels:catD.map(d=>d.c),datasets:[{data:catD.map(d=>Math.round(d.r)),backgroundColor:PALETTE,borderWidth:2,borderColor:"#fff",hoverOffset:6}]},options:{responsive:true,cutout:"62%",plugins:{legend:{position:"bottom",labels:{font:{size:11},padding:12}},tooltip:{callbacks:{label:c=>" "+c.label+": "+fmt(c.raw)}}}}});
+
+  // region bar
+  const regD=data.length===RAW.length?REGIONS:(()=>{const m={};data.forEach(r=>m[r.region]=(m[r.region]||0)+r.revenue);return Object.entries(m).sort((a,b)=>b[1]-a[1]).map(([r,v])=>({r,v}));})();
+  mkChart("c-region",{type:"bar",data:{labels:regD.map(d=>d.r),datasets:[{data:regD.map(d=>Math.round(d.v)),backgroundColor:regD.map((_,i)=>i===0?C.green:C.green+"55"),borderRadius:6}]},options:{responsive:true,indexAxis:"y",plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>"  "+fmt(c.raw)}}},scales:{x:{ticks:{callback:v=>fmt(v)},grid:{color:"#E8E6E0"}},y:{grid:{display:false}}}}});
+
+  // reps
+  const repD=data.length===RAW.length?REPS:(()=>{const m={};data.forEach(r=>m[r.sales_rep]=(m[r.sales_rep]||0)+r.revenue);return Object.entries(m).sort((a,b)=>b[1]-a[1]).map(([r,v])=>({r,v}));})();
+  mkChart("c-rep",{type:"bar",data:{labels:repD.map(d=>d.r.split(" ")[0]),datasets:[{data:repD.map(d=>Math.round(d.v)),backgroundColor:PALETTE,borderRadius:6}]},options:{responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:(c,i)=>" "+repD[c.dataIndex].r+": "+fmt(c.raw)}}},scales:{y:{ticks:{callback:v=>fmt(v)},grid:{color:"#E8E6E0"}},x:{grid:{display:false}}}}});
+
+  // top products
+  mkChart("c-product",{type:"bar",data:{labels:PRODS.map(d=>d.p),datasets:[{data:PRODS.map(d=>Math.round(d.r)),backgroundColor:C.purple+"99",borderColor:C.purple,borderWidth:1.5,borderRadius:4}]},options:{responsive:true,indexAxis:"y",plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>"  "+fmt(c.raw)}}},scales:{x:{ticks:{callback:v=>fmt(v)},grid:{color:"#E8E6E0"}},y:{ticks:{font:{size:10}},grid:{display:false}}}}});
+}
+
+function catBadge(cat){
+  const m={"Electronics":"badge-elec","Clothing":"badge-cloth","Food & Drink":"badge-food","Home & Garden":"badge-home"};
+  return`<span class="badge ${m[cat]||""}">${cat}</span>`;
+}
+
+function renderTable(){
+  const q=document.getElementById("tbl-search").value.toLowerCase();
+  let data=getFiltered();
+  if(q)data=data.filter(r=>Object.values(r).join(" ").toLowerCase().includes(q));
+  data.sort((a,b)=>{const va=a[sortKey],vb=b[sortKey];return sortAsc?(va>vb?1:-1):(va<vb?1:-1);});
+  document.getElementById("row-count").textContent=`(${data.length} rows)`;
+  const tbody=document.getElementById("tbl-body");
+  tbody.innerHTML=data.slice(0,60).map(r=>`<tr>
+    <td style="font-family:monospace;font-size:11px;color:var(--muted)">${r.order_id}</td>
+    <td>${r.date}</td>
+    <td>${r.region}</td>
+    <td>${catBadge(r.category)}</td>
+    <td>${r.product}</td>
+    <td style="text-align:right">${r.quantity}</td>
+    <td style="text-align:right">£${r.unit_price.toFixed(2)}</td>
+    <td style="text-align:right;font-weight:600">${fmtFull(r.revenue)}</td>
+    <td style="color:var(--muted)">${r.sales_rep}</td>
+  </tr>`).join("");
+}
+
+function sortTable(key){sortKey=key;sortAsc=!sortAsc;renderTable();}
+
+function applyFilters(){
+  const data=getFiltered();
+  updateKPIs(data);
+  buildCharts(data);
+  renderTable();
+}
+
+function resetFilters(){
+  ["f-region","f-cat","f-qtr"].forEach(id=>document.getElementById(id).value="all");
+  applyFilters();
+}
+
+// init
+updateKPIs(RAW);
+buildCharts(RAW);
+renderTable();
+</script>
+</body>
+</html>
